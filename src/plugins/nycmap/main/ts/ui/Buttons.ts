@@ -12,22 +12,15 @@ const stateSelectorAdapter = (editor: Editor, selector: string[]) => (buttonApi:
   editor.selection.selectorChangedWithUnbind(selector.join(','), buttonApi.setActive).unbind;
 
 const register = function (editor: Editor) {
-  editor.ui.registry.addToggleButton('media', {
-    tooltip: 'Insert/edit media',
+  editor.ui.registry.addToggleButton('nycmap', {
+    tooltip: 'Insert/edit NYC Map',
     icon: 'embed',
     onAction: () => {
-      editor.execCommand('mceMedia');
+      editor.execCommand('mceNycmap');
     },
     onSetup: stateSelectorAdapter(editor, ['img[data-mce-object]', 'span[data-mce-object]', 'div[data-ephox-embed-iri]'])
   });
 
-  editor.ui.registry.addMenuItem('media', {
-    icon: 'embed',
-    text: 'Media...',
-    onAction: () => {
-      editor.execCommand('mceMedia');
-    }
-  });
 };
 
 export default {

@@ -1,42 +1,54 @@
-/**
- * Copyright (c) Tiny Technologies, Inc. All rights reserved.
- * Licensed under the LGPL or a commercial license.
- * For LGPL see License.txt in the project root for license information.
- * For commercial licenses see https://www.tiny.cloud/
- */
-
-import { Merger, Obj, Arr } from '@ephox/katamari';
-import Tools from 'tinymce/core/api/util/Tools';
 import { Editor } from 'tinymce/core/api/Editor';
 
-import Settings from '../api/Settings';
-import HtmlToData from '../core/HtmlToData';
-import Service from '../core/Service';
-import Size from '../core/Size';
-import UpdateHtml from '../core/UpdateHtml';
 import { Types } from '@ephox/bridge';
 
+const sizeInput: Types.Dialog.BodyComponentApi = {
+  type: 'sizeinput',
+  name: 'dimensions',
+  label: 'Constrain proportions',
+  constrain: true
+};
+
+const styleSelect: Types.Dialog.BodyComponentApi = {
+  type: 'selectbox',
+  name: 'style',
+  label: 'Style',
+  items: [{text: 'Minimal', value: 'min'}, {text: 'Full', value: 'full'}]
+};
+
+const styleTab = {
+  title: 'Style',
+  items: [sizeInput, styleSelect]
+};
+
+const searchCheck: Types.Dialog.BodyComponentApi = {
+  type: 'checkbox',
+  name: 'search',
+  label: 'Include a search box'
+};
+
+const searchTab = {
+  title: 'Search',
+  items: [searchCheck]
+};
+
+const tabs = [styleTab, searchTab];
+
+const body: Types.Dialog.TabPanelApi = {
+  type: 'tabpanel',
+  tabs
+};
+
+const onSubmit = () => () => {
+};
+const onChange = () => () => {
+};
 
 const showDialog = function (editor: Editor) {
-
-  const onSubmit = () => () => {
-  };
-  const onChange = () => () => {
-  };
-  
-  const dialogSpec = (bodyItems: Types.Dialog.BodyComponentApi[], initialData: DialogData): Types.Dialog.DialogApi<DialogData> => ({
+  editor.windowManager.open({
     title: 'Add NYC Map',
     size: 'large',
-    body: {
-      type: 'panel',
-      items: [{
-        type: 'selectbox',
-        name: 'template',
-        label: 'Templates',
-        items: []
-      }]
-    },
-    initialData,
+    body,
     buttons: [
       {
         type: 'cancel',
@@ -53,9 +65,6 @@ const showDialog = function (editor: Editor) {
     onSubmit: onSubmit(),
     onChange: onChange()
   });
-
-  editor.windowManager.open(dialogSpec([], { template: '', preview: '' }));
-
 };
 
 export default {

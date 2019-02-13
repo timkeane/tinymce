@@ -12,7 +12,7 @@ const register = function (editor) {
     Dialog.showDialog(editor);
   };
 
-  editor.addCommand('mceMedia', showDialog);
+  editor.addCommand('mceNycmap', showDialog);
 };
 
 export default {
