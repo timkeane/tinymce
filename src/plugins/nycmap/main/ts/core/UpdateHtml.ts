@@ -1,202 +1,89 @@
-/**
- * Copyright (c) Tiny Technologies, Inc. All rights reserved.
- * Licensed under the LGPL or a commercial license.
- * For LGPL see License.txt in the project root for license information.
- * For commercial licenses see https://www.tiny.cloud/
- */
+import { Editor } from 'tinymce/core/api/Editor';
+import { MapHtmlElements } from './DataToHtml';
 
-import Writer from 'tinymce/core/api/html/Writer';
-import SaxParser from 'tinymce/core/api/html/SaxParser';
-import Schema from 'tinymce/core/api/html/Schema';
-import DOMUtils from 'tinymce/core/api/dom/DOMUtils';
-import { Element } from '@ephox/dom-globals';
+const updateHead = (editor, html) => {
+  const head = html.head;
+  head.css.forEach(css => {
+    appendToHead(editor.getDoc(), css);
+  });
+  appendToHeadWhenReady(editor, head.jquery, false);
+  appendToHeadWhenReady(editor, head.proj4, 'jQuery');
+  appendToHeadWhenReady(editor, head.ol, 'proj4');
+  appendToHeadWhenReady(editor, head.polyfill, 'ol');  
+  appendToHeadWhenReady(editor, head.nyc, 'ol');
+};
 
-const DOM = DOMUtils.DOM;
+const appendToHead = (doc, node) => {
+  const existing = doc.getElementById(node.id);
+  if (existing !== null) {
+    existing.remove();
+  }
+  doc.head.appendChild(node);
+};
 
-const setAttributes = function (attrs, updatedAttrs) {
-  let name;
-  let i;
-  let value;
-  let attr;
+const appendToHeadWhenReady = (editor, node, wait) => {
+  if (wait === false || editor.getWin()[wait] !== undefined) {
+    appendToHead(editor.getDoc(), node);
+  } else {
+    setTimeout(() => {
+      appendToHeadWhenReady(editor, node, wait);
+    }, 500);
+  }
+};
 
-  for (name in updatedAttrs) {
-    value = '' + updatedAttrs[name];
-
-    if (attrs.map[name]) {
-      i = attrs.length;
-      while (i--) {
-        attr = attrs[i];
-
-        if (attr.name === name) {
-          if (value) {
-            attrs.map[name] = value;
-            attr.value = value;
-          } else {
-            delete attrs.map[name];
-            attrs.splice(i, 1);
-          }
-        }
-      }
-    } else if (value) {
-      attrs.push({
-        name,
-        value
+const updateContent = (editor, doc, node) => {
+  if (node) {
+    const existing = doc.getElementById(node.id);
+    if (existing !== null) {
+      existing.innerHTML = node.innerHTML;
+      node.getAttributeNames().forEach(attr => {
+        existing.setAttribute(attr, node.getAttribute(attr));
       });
-
-      attrs.map[name] = value;
+    } else {
+      const div = doc.createElement('div');
+      if (node) {
+        div.appendChild(node);
+        editor.insertContent(div.innerHTML);
+      }
     }
   }
 };
 
-const normalizeHtml = function (html) {
-  const writer = Writer();
-  const parser = SaxParser(writer);
-  parser.parse(html);
-  return writer.getContent();
+const updateHtml = (editor : Editor, html : MapHtmlElements) => {
+  const doc = editor.getDoc();
+  updateHead(editor, html);
+  updateContent(editor, doc, html.search);
+  updateContent(editor, doc, html.map);
+  updateContent(editor, doc, html.list);
+  appendToHeadWhenReady(editor, html.script, 'nyc');
 };
 
-const updateHtmlSax = function (html, data, updateAll?) {
-  const writer = Writer();
-  let sourceCount = 0;
-  let hasImage;
+const updateMapScript = (editor, doc, script) => {
+  const win = editor.getWin();
+  if (win.jQuery && win.proj4 && win.ol && win.nyc) {
+    updateContent(editor, doc, script);
+  } else {
 
-  SaxParser({
-    validate: false,
-    allow_conditional_comments: true,
-    special: 'script,noscript',
-
-    comment (text) {
-      writer.comment(text);
-    },
-
-    cdata (text) {
-      writer.cdata(text);
-    },
-
-    text (text, raw) {
-      writer.text(text, raw);
-    },
-
-    start (name, attrs, empty) {
-      switch (name) {
-        case 'video':
-        case 'object':
-        case 'embed':
-        case 'img':
-        case 'iframe':
-          if (data.height !== undefined && data.width !== undefined) {
-            setAttributes(attrs, {
-              width: data.width,
-              height: data.height
-            });
-          }
-          break;
-      }
-
-      if (updateAll) {
-        switch (name) {
-          case 'video':
-            setAttributes(attrs, {
-              poster: data.poster,
-              src: ''
-            });
-
-            if (data.source2) {
-              setAttributes(attrs, {
-                src: ''
-              });
-            }
-            break;
-
-          case 'iframe':
-            setAttributes(attrs, {
-              src: data.source1
-            });
-            break;
-
-          case 'source':
-            sourceCount++;
-
-            if (sourceCount <= 2) {
-              setAttributes(attrs, {
-                src: data['source' + sourceCount],
-                type: data['source' + sourceCount + 'mime']
-              });
-
-              if (!data['source' + sourceCount]) {
-                return;
-              }
-            }
-            break;
-
-          case 'img':
-            if (!data.poster) {
-              return;
-            }
-
-            hasImage = true;
-            break;
-        }
-      }
-
-      writer.start(name, attrs, empty);
-    },
-
-    end (name) {
-      if (name === 'video' && updateAll) {
-        for (let index = 1; index <= 2; index++) {
-          if (data['source' + index]) {
-            const attrs: any = [];
-            attrs.map = {};
-
-            if (sourceCount < index) {
-              setAttributes(attrs, {
-                src: data['source' + index],
-                type: data['source' + index + 'mime']
-              });
-
-              writer.start('source', attrs, true);
-            }
-          }
-        }
-      }
-
-      if (data.poster && name === 'object' && updateAll && !hasImage) {
-        const imgAttrs: any = [];
-        imgAttrs.map = {};
-
-        setAttributes(imgAttrs, {
-          src: data.poster,
-          width: data.width,
-          height: data.height
-        });
-
-        writer.start('img', imgAttrs, true);
-      }
-
-      writer.end(name);
-    }
-  }, Schema({})).parse(html);
-
-  return writer.getContent();
+    setTimeout(() => {
+      updateMapScript(editor, doc, script)      ;
+    }, 500);
+  }
 };
 
-const isEphoxEmbed = function (html) {
-  const fragment = DOM.createFragment(html);
-  return DOM.getAttrib(fragment.firstChild, 'data-ephox-embed-iri') !== '';
+const remove = (node) => {
+  if (node) node.remove();
 };
 
-const updateEphoxEmbed = function (html, data) {
-  const fragment = DOM.createFragment(html);
-  const div = fragment.firstChild as Element;
-
-  return normalizeHtml(div.outerHTML);
-};
-
-const updateHtml = function (html: string, data, updateAll?: boolean) {
-  return isEphoxEmbed(html) ? updateEphoxEmbed(html, data) : updateHtmlSax(html, data, updateAll);
+const removeHtml = (editor : Editor, html : MapHtmlElements) => {
+  html.head.forEach(node => {
+    remove(node);
+  });
+  remove(html.search);
+  remove(html.map);
+  remove(html.list);
 };
 
 export default {
-  updateHtml
+  updateHtml,
+  removeHtml
 };

@@ -1,4 +1,4 @@
-export default { 
+const panel : any = { 
   title: 'NYC Map - Locations Presentation',
   body: {
     type: 'panel',
@@ -29,3 +29,4 @@ export default {
     ]
   }
 };
+export default panel;

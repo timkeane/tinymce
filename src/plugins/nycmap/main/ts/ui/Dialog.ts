@@ -4,11 +4,13 @@ import { MapDialogData } from '../core/DataToHtml'
 import DataToHtml from '../core/DataToHtml'
 import { alert } from '@ephox/dom-globals';
 import { Editor } from 'tinymce/core/api/Editor';
+import UpdateHtml from '../core/UpdateHtml';
 
 const SOCRATA_URL = 'https://data.cityofnewyork.us';
 const GEOCLIENT_URL = 'https://maps.nyc.gov/geoclient/v1';
 
 const mapDialogData : MapDialogData = {
+  instance: '',
   style_style: 'min',
   search_location: 'none',
   geoclient_url: GEOCLIENT_URL,
@@ -207,8 +209,14 @@ const onAction = (dia, obj) => {
 
 const onSubmit = (dia, obj) => {
   const mapHtmlElements = DataToHtml.htmlFromData(editor, mapDialogData);
-  console.warn(mapHtmlElements);
-  
+  UpdateHtml.updateHtml(editor, mapHtmlElements);
+  dia.disable('previous');
+  dia.disable('next');
+  dia.disable('cancel');
+  dia.disable('save');
+  setTimeout(() => {
+    editor.windowManager.close();
+  }, 1000);
 };
 
 panels.panels.forEach(panel => {

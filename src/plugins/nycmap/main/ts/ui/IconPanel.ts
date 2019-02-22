@@ -1,4 +1,4 @@
-export default {
+const panel : any = { 
   title: 'NYC Map - Icon',
   body: {
     type: 'panel',
@@ -11,3 +11,4 @@ export default {
     ]
   }
 };
+export default panel;

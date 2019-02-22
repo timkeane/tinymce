@@ -1,4 +1,4 @@
-export default {
+const panel : any = { 
   title: 'NYC Map - Geoclient',
   body: {
     type: 'panel',
@@ -21,3 +21,4 @@ export default {
     ]
   }
 };
+export default panel;

@@ -1,4 +1,4 @@
-export default { 
+const panel : any = { 
   title: 'NYC Map - Socrata Columns',
   body: {
     type: 'panel',
@@ -78,3 +78,5 @@ export default {
     ]
   }
 };
+
+export default panel;

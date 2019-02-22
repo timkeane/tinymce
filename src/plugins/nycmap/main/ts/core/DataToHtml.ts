@@ -2,19 +2,19 @@ import { Editor } from 'tinymce/core/api/Editor';
 
 const NYC_LIB_VER = 'v1.2.37';
 const NYC_LIB_URL = `https://maps.nyc.gov/nyc-lib/${NYC_LIB_VER}`;
+
 const NYC_LIB_MIN_CSS = {id: 'nyc-map-min-css', class: 'nyc-map-dependency', rel: 'stylesheet', href: `${NYC_LIB_URL}/css/nyc-basic-lib.css`};
 const NYC_LIB_FULL_CSS = {id: 'nyc-map-full-css', class: 'nyc-map-dependency', rel: 'stylesheet', href: `${NYC_LIB_URL}/css/nyc-ol-lib.css`};
-const FONT_AWESOME_DEPENDENCY = {id: 'nyc-map-fa', class: 'nyc-map-dependency', rel: 'stylesheet', href: 'https://use.fontawesome.com/releases/v5.7.1/css/all.css'};
-const PAPA_DEPENDENCY = {id: 'nyc-map-papa', class: 'nyc-map-dependency', src: 'https://cdnjs.cloudflare.com/ajax/libs/PapaParse/4.4.0/papaparse.min.js'},
-const SCRIPT_DEPENDENCIES = [
-  {id: 'nyc-map-proj4', class: 'nyc-map-dependency', src: 'https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.3.15/proj4.js'},
-  {id: 'nyc-map-ol', class: 'nyc-map-dependency', src: 'https://cdn.rawgit.com/openlayers/openlayers.github.io/master/en/v5.3.0/build/ol.js'},
-  {id: 'nyc-map-polyfill', class: 'nyc-map-dependency', src:`${NYC_LIB_URL}/js/babel-polyfill.js`},
-  {id: 'nyc-map-lib', class: 'nyc-map-dependency', src:`${NYC_LIB_URL}/js/nyc-ol-lib.js`}
-];
-const JQUERY_DEPENDENCY = {id: 'nyc-map-jq', class: 'nyc-map-dependency', src: 'https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js'};
+const FONT_AWESOME_CSS = {id: 'nyc-map-fa', class: 'nyc-map-dependency', rel: 'stylesheet', href: 'https://use.fontawesome.com/releases/v5.7.1/css/all.css'};
+const JQUERY_JS = {id: 'nyc-map-jq', class: 'nyc-map-dependency', src: 'https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js'};
+const PROJ4_JS = {id: 'nyc-map-proj4', class: 'nyc-map-dependency', src: 'https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.3.15/proj4.js'};
+const OL_JS = {id: 'nyc-map-ol', class: 'nyc-map-dependency', src: 'https://cdn.rawgit.com/openlayers/openlayers.github.io/master/en/v5.3.0/build/ol.js'};
+const PAPA_JS = {id: 'nyc-map-papa', class: 'nyc-map-dependency', src: 'https://cdnjs.cloudflare.com/ajax/libs/PapaParse/4.4.0/papaparse.min.js'},
+const POLYFILL_JS = {id: 'nyc-map-polyfill', class: 'nyc-map-dependency', src:`${NYC_LIB_URL}/js/babel-polyfill.js`};
+const NYC_LIB_JS = {id: 'nyc-map-lib', class: 'nyc-map-dependency', src:`${NYC_LIB_URL}/js/nyc-ol-lib.js`}
 
 export interface MapDialogData {
+  instance: string;
   style_style: string;
   search_location: string;
   geoclient_url: string;
@@ -45,11 +45,11 @@ export interface MapDialogData {
 };
 
 export interface MapHtmlElements {
-  head: string;
-  search: string;
-  map: string;
-  list: string;
-  script: string;
+  head: any;
+  search: any;
+  map: any;
+  list: any;
+  script: any;
 };
 
 const createHtmlElement = (doc, type, obj) => {
@@ -61,32 +61,40 @@ const createHtmlElement = (doc, type, obj) => {
 };
 
 const headElements = (args) => {
+  const win = args.win;
   const doc = args.doc;
   const data = args.data;
-  const elements = [];
-  if (args.win.jQuery === undefined) {
-    elements.push(createHtmlElement(doc, 'script', JQUERY_DEPENDENCY));
+  const elements : any = {css: []};
+  if (win.jQuery === undefined) {
+    elements.jquery = createHtmlElement(doc, 'script', JQUERY_JS);
+  }
+  if (doc.getElementById(PROJ4_JS.id) === null) { 
+    elements.proj4 = createHtmlElement(doc, 'script', PROJ4_JS);
+  }
+  if (doc.getElementById(OL_JS.id) === null) { 
+    elements.ol = createHtmlElement(doc, 'script', OL_JS);
   }
   if (data.data_source !== 'none') {
-    if (doc.getElementById(PAPA_DEPENDENCY.id) === null) { 
-      elements.push(createHtmlElement(doc, 'script', PAPA_DEPENDENCY));
+    if (doc.getElementById(PAPA_JS.id) === null) { 
+      elements.papa = createHtmlElement(doc, 'script', PAPA_JS);
     }
   }
-  SCRIPT_DEPENDENCIES.forEach(script => {
-    if (doc.getElementById(script.id) === null) {
-      elements.push(createHtmlElement(doc, 'script', script));
-    }
-  });
-  if (doc.getElementById(FONT_AWESOME_DEPENDENCY.id) === null) {
-    elements.push(createHtmlElement(doc, 'link', FONT_AWESOME_DEPENDENCY));
+  if (doc.getElementById(POLYFILL_JS.id) === null) { 
+    elements.polyfill = createHtmlElement(doc, 'script', POLYFILL_JS);
+  }
+  if (doc.getElementById(NYC_LIB_JS.id) === null) { 
+    elements.nyc = createHtmlElement(doc, 'script', NYC_LIB_JS);
+  }
+  if (doc.getElementById(FONT_AWESOME_CSS.id) === null) {
+    elements.css.push(createHtmlElement(doc, 'link', FONT_AWESOME_CSS));
   }
   if (data.style_style === 'min') {
     if (doc.getElementById(NYC_LIB_MIN_CSS.id) === null) {
-      elements.push(createHtmlElement(doc, 'link', NYC_LIB_MIN_CSS));
+      elements.css.push(createHtmlElement(doc, 'link', NYC_LIB_MIN_CSS));
     }
   } else {
     if (doc.getElementById(NYC_LIB_FULL_CSS.id) === null) {
-      elements.push(createHtmlElement(doc, 'link', NYC_LIB_FULL_CSS));
+      elements.css.push(createHtmlElement(doc, 'link', NYC_LIB_FULL_CSS));
     }
   }
   return elements;
@@ -95,24 +103,24 @@ const headElements = (args) => {
 const searchElement = (args) => {
   if (args.data.search_location === 'above') {
     return createHtmlElement(args.doc, 'input', {
-      id: `nyc-map-search-${args.instances}`,
-      class: `nyc-map-search nyc-map-instance-${args.instances}`
+      id: `nyc-map-search-${args.instance}`,
+      class: `nyc-map-search nyc-map-instance-${args.instance}`
     });
   }
 };
 
 const mapElement = (args) => {
   return createHtmlElement(args.doc, 'div', {
-    id: `nyc-map-${args.instances}`,
-    class: `nyc-map-instance nyc-map-instance-${args.instances}`
+    id: `nyc-map-${args.instance}`,
+    class: `nyc-map-instance nyc-map-instance-${args.instance}`
   });
 };
 
 const listElement = (args) => {
   if (args.data.presentation_list === 'yes') {
     return createHtmlElement(args.doc, 'div', {
-      id: `nyc-map-list-${args.instances}`,
-      class: `nyc-map-list nyc-map-instance-${args.instances}`
+      id: `nyc-map-list-${args.instance}`,
+      class: `nyc-map-list nyc-map-instance-${args.instance}`
     });
   }
 };
@@ -131,22 +139,22 @@ const dataUrl = (data : MapDialogData) => {
 
 const searchOtions = (args: any, mapOptions : any) => {
   const data = args.data;
-  const instances = args.instances;
+  const instance = args.instance;
   if (data.search_location !== 'none') {
     mapOptions.geoclientUrl = `${data.geoclient_url}/search.json?app_id=${data.geoclient_app}&app_key=${data.geoclient_key}`;
     if (data.search_location === 'above') {
-      mapOptions.searchTarget = `#nyc-map-search-${instances}`;
+      mapOptions.searchTarget = `#nyc-map-search-${instance}`;
     }
   }
 };
 
 const dataOtions = (args: any, mapOptions : any) => {
   const data = args.data;
-  const instances = args.instances;
+  const instance = args.instance;
   if (data.data_source !== 'none') {
     mapOptions.facilityUrl = dataUrl(data);
     if (data.presentation_list === 'yes') {
-      mapOptions.searchTarget = `#nyc-map-list-${instances}`;
+      mapOptions.searchTarget = `#nyc-map-list-${instance}`;
     }
     if (data.presentation_name.trim() !== '') {
       mapOptions.facilityType = data.presentation_name;
@@ -161,7 +169,7 @@ const dataOtions = (args: any, mapOptions : any) => {
 
 const mapOptions = (args) => {
   const mapOptions : any = {
-    mapTarget: `#nyc-map-${args.instances}`
+    mapTarget: `#nyc-map-${args.instance}`
   };
   searchOtions(args, mapOptions);
   dataOtions(args, mapOptions);
@@ -169,15 +177,15 @@ const mapOptions = (args) => {
 };
 
 const scriptElement = (args) => {
-  const instances = args.instances;
+  const instance = args.instance;
   const script = createHtmlElement(args.doc, 'script', {
-    id: `nyc-map-list-${instances}`,
-    class: `nyc-map-list nyc-map-instance-${instances}`
+    id: `nyc-map-script-${instance}`,
+    class: `nyc-map-script nyc-map-instance-${instance}`
   });
   const options = mapOptions(args);
   script.innerHTML = `
-    $(document).ready({
-      var nycMap${instances} = new nyc.ol.FrameworkMap(
+    $(document).ready(function() {
+      var nycMap${instance} = new nyc.ol.FrameworkMap(
         ${options}
       );
     });
@@ -185,21 +193,28 @@ const scriptElement = (args) => {
   return script;
 };
 
+const getInstanceId = (doc, data) => {
+  if (data.instance !== '') {
+    return data.instance;
+  }
+  return doc.getElementsByClassName('nyc-map-instance').length;
+};
+
 const htmlFromData = (editor : Editor, mapDialogData : MapDialogData) => {
-  const doc = editor.getDoc();
   const args = {
     win: editor.getWin(),
-    doc: doc,
-    instances: doc.getElementsByClassName('nyc-map-instance').length,
+    doc: editor.getDoc(),
+    instance: getInstanceId(editor.getDoc(), mapDialogData),
     data: mapDialogData
   };
-  return {
+  const html : MapHtmlElements = {
     head: headElements(args),
     search: searchElement(args),
     map: mapElement(args),
     list: listElement(args),
     script: scriptElement(args)
   };
+  return html;
 };
 
 export default {
