@@ -41,7 +41,7 @@ const appendToHeadWhenReady = (editor, node, wait) => {
   }
 };
 
-const updateContent = (editor, doc, node) => {
+const updateContent = (editor, doc, node, map, before) => {
   if (node) {
     const existing = doc.getElementById(node.id);
     if (existing !== null) {
@@ -49,18 +49,18 @@ const updateContent = (editor, doc, node) => {
       node.getAttributeNames().forEach(attr => {
         existing.setAttribute(attr, node.getAttribute(attr));
       });
-    } else {
+    } else if (map === null) {
       const div = doc.createElement('div');
-      if (node) {
-        div.appendChild(node);
-        editor.insertContent(div.innerHTML);
-        const children = doc.getElementById(node.id).children;
-        for (var i = 0; i < children.length; i++) {
-          if (children.item(i).tagName === 'BR') {
-            children.item(i).remove();
-          }
+      div.appendChild(node);
+      editor.insertContent(div.innerHTML);
+      const children = doc.getElementById(node.id).children;
+      for (var i = 0; i < children.length; i++) {
+        if (children.item(i).tagName === 'BR') {
+          children.item(i).remove();
         }
       }
+    } else {
+      map.insertAdjacentElement(before ? 'beforebegin' : 'afterend', node);
     }
   }
 };
@@ -68,16 +68,17 @@ const updateContent = (editor, doc, node) => {
 const updateHtml = (editor : Editor, html : MapHtmlElements) => {
   const doc = editor.getDoc();
   updateHead(editor, html);
-  updateContent(editor, doc, html.search);
-  updateContent(editor, doc, html.map);
-  updateContent(editor, doc, html.list);
+  updateContent(editor, doc, html.map, null, null);
+  const map = doc.getElementById(html.map.id);
+  updateContent(editor, doc, html.search, map, true);
+  updateContent(editor, doc, html.list, map, false);
   appendToHeadWhenReady(editor, html.script, 'nyc');
 };
 
 const updateMapScript = (editor, doc, script) => {
   const win = editor.getWin();
   if (win.jQuery && win.proj4 && win.ol && win.nyc) {
-    updateContent(editor, doc, script);
+    updateContent(editor, doc, script, null, null);
   } else {
 
     setTimeout(() => {

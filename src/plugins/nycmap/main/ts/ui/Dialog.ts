@@ -41,6 +41,7 @@ const mapDialogData : MapDialogData = {
 };
 let editor;
 let currentPanel = panels.style;
+let colorHack; /* colorpicker in CirclePanel does not fire the dialog change event */
 
 const errorMsgs = () => {
   const errors = {
@@ -205,6 +206,13 @@ const onAction = (dia, obj) => {
     }
   }
   canSave(dia);
+  if (currentPanel === panels.circle) {
+    colorHack = setInterval(() => {
+      onChange(dia);
+    }, 100);
+  } else {
+    clearInterval(colorHack);
+  }
 };
 
 const onSubmit = (dia) => {
@@ -217,6 +225,7 @@ const onSubmit = (dia) => {
   setTimeout(() => {
     editor.windowManager.close();
   }, 1000);
+  clearInterval(colorHack);
 };
 
 panels.panels.forEach(panel => {
@@ -231,4 +240,4 @@ export default {
     editor = ed;
     editor.windowManager.open(panels.style);
   }
-}
+};

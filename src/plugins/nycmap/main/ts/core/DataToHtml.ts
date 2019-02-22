@@ -155,7 +155,7 @@ const dataOtions = (args: any, mapOptions : any) => {
   if (data.data_source !== 'none') {
     mapOptions.facilityUrl = dataUrl(data);
     if (data.presentation_list === 'yes') {
-      mapOptions.searchTarget = `#nyc-map-list-${instance}`;
+      mapOptions.listTarget = `#nyc-map-list-${instance}`;
     }
     if (data.presentation_name.trim() !== '') {
       mapOptions.facilityType = data.presentation_name;
