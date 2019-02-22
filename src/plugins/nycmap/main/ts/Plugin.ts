@@ -1,7 +1,7 @@
 import PluginManager from 'tinymce/core/api/PluginManager';
 import Api from './api/Api';
 import Commands from './api/Commands';
-import Buttons from './ui/Buttons';
+import Buttons from './ui/EditorButtons';
 
 PluginManager.add('nycmap', function (editor) {
   Commands.register(editor);

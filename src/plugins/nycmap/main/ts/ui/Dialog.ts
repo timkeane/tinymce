@@ -1,5 +1,5 @@
-import panels from './panels.js';
-import buttons from './dialogButtons.js';
+import panels from './Panels';
+import buttons from './DialogButtons';
 import { MapDialogData } from '../core/DataToHtml'
 import DataToHtml from '../core/DataToHtml'
 import { alert } from '@ephox/dom-globals';
