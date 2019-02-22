@@ -23,7 +23,7 @@ const mapDialogData : MapDialogData = {
   presentation_name: '',
   presentation_list: '',
   presentation_marker: 'circle',
-  circle_color: 'blue',
+  circle_color: '#0000ff',
   icon_url: '',
   start_at: '',
   ID: '',
@@ -207,7 +207,7 @@ const onAction = (dia, obj) => {
   canSave(dia);
 };
 
-const onSubmit = (dia, obj) => {
+const onSubmit = (dia) => {
   const mapHtmlElements = DataToHtml.htmlFromData(editor, mapDialogData);
   UpdateHtml.updateHtml(editor, mapHtmlElements);
   dia.disable('previous');

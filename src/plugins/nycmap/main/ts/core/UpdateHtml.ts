@@ -9,25 +9,35 @@ const updateHead = (editor, html) => {
   appendToHeadWhenReady(editor, head.jquery, false);
   appendToHeadWhenReady(editor, head.proj4, 'jQuery');
   appendToHeadWhenReady(editor, head.ol, 'proj4');
-  appendToHeadWhenReady(editor, head.polyfill, 'ol');  
-  appendToHeadWhenReady(editor, head.nyc, 'ol');
+  if (head.papa) {
+    appendToHeadWhenReady(editor, head.papa, 'ol');
+    appendToHeadWhenReady(editor, head.polyfill, 'Papa');  
+    appendToHeadWhenReady(editor, head.nyc, 'Papa');
+  } else {
+    appendToHeadWhenReady(editor, head.polyfill, 'ol');  
+    appendToHeadWhenReady(editor, head.nyc, 'ol');
+  }
 };
 
 const appendToHead = (doc, node) => {
-  const existing = doc.getElementById(node.id);
-  if (existing !== null) {
-    existing.remove();
+  if (node) {
+    const existing = doc.getElementById(node.id);
+    if (existing !== null) {
+      existing.remove();
+    }
+    doc.head.appendChild(node);
   }
-  doc.head.appendChild(node);
 };
 
 const appendToHeadWhenReady = (editor, node, wait) => {
-  if (wait === false || editor.getWin()[wait] !== undefined) {
-    appendToHead(editor.getDoc(), node);
-  } else {
-    setTimeout(() => {
-      appendToHeadWhenReady(editor, node, wait);
-    }, 500);
+  if (node) {
+    if (wait === false || editor.getWin()[wait] !== undefined) {
+      appendToHead(editor.getDoc(), node);
+    } else {
+      setTimeout(() => {
+        appendToHeadWhenReady(editor, node, wait);
+      }, 500);
+    }
   }
 };
 
@@ -44,6 +54,12 @@ const updateContent = (editor, doc, node) => {
       if (node) {
         div.appendChild(node);
         editor.insertContent(div.innerHTML);
+        const children = doc.getElementById(node.id).children;
+        for (var i = 0; i < children.length; i++) {
+          if (children.item(i).tagName === 'BR') {
+            children.item(i).remove();
+          }
+        }
       }
     }
   }

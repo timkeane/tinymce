@@ -1,3 +1,4 @@
+import Color from 'tinymce/core/api/util/Color'
 import { Editor } from 'tinymce/core/api/Editor';
 
 const NYC_LIB_VER = 'v1.2.37';
@@ -162,7 +163,8 @@ const dataOtions = (args: any, mapOptions : any) => {
     if (data.presentation_marker === 'icon') {
       mapOptions.mapMarkerUrl = data.icon_url;
     } else {
-      mapOptions.mapMarkerColor = data.circle_color;
+      const color = Color(data.circle_color).toRgb();
+      mapOptions.mapMarkerColor = [color.r, color.g, color.b];
     }
   }
 };
