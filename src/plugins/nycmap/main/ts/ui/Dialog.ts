@@ -1,17 +1,25 @@
-import nycPanels from './panels.js';
-import nycButtons from './dialogButtons.js';
+import panels from './panels.js';
+import buttons from './dialogButtons.js';
+import { MapDialogData } from '../core/DataToHtml'
+import DataToHtml from '../core/DataToHtml'
 import { alert } from '@ephox/dom-globals';
+import { Editor } from 'tinymce/core/api/Editor';
 
-const config = {
-  style_style: '',
+const SOCRATA_URL = 'https://data.cityofnewyork.us';
+const GEOCLIENT_URL = 'https://maps.nyc.gov/geoclient/v1';
+
+const mapDialogData : MapDialogData = {
+  style_style: 'min',
   search_location: 'none',
-  geoclient_url: '',
+  geoclient_url: GEOCLIENT_URL,
   geoclient_app: '',
   geoclient_key: '',
   data_source: 'none',
   csv_url: '',
-  socrata_url: '',
+  socrata_url: SOCRATA_URL,
   socrata_resource: '',
+  presentation_name: '',
+  presentation_list: '',
   presentation_marker: 'circle',
   circle_color: 'blue',
   icon_url: '',
@@ -30,7 +38,7 @@ const config = {
   DETAIL: ''
 };
 let editor;
-let currentPanel = nycPanels.style;
+let currentPanel = panels.style;
 
 const errorMsgs = () => {
   const errors = {
@@ -42,45 +50,45 @@ const errorMsgs = () => {
     icon: [],
     circle: []
   };
-  if (config.search_location !== 'none') {
-    if (config.geoclient_url.trim().length === 0) {
+  if (mapDialogData.search_location !== 'none') {
+    if (mapDialogData.geoclient_url.trim().length === 0) {
       errors.geoclient.push('A Geoclient URL is required');
       errors.error = true;
     }
-    if (config.geoclient_app.trim().length === 0) {
+    if (mapDialogData.geoclient_app.trim().length === 0) {
       errors.geoclient.push('A Geoclient App Id is required');
       errors.error = true;
     }
-    if (config.geoclient_key.trim().length === 0) {
+    if (mapDialogData.geoclient_key.trim().length === 0) {
       errors.geoclient.push('A Geoclient App Key is required');
       errors.error = true;
     }
   }
-  if (config.data_source === 'csv') {
-    if (config.csv_url.trim().length === 0) {
+  if (mapDialogData.data_source === 'csv') {
+    if (mapDialogData.csv_url.trim().length === 0) {
       errors.csv.push('A CSV URL is required');
       errors.error = true;
     }
   }
-  if (config.data_source === 'socrata') {
-    if (config.socrata_url.trim().length === 0) {
+  if (mapDialogData.data_source === 'socrata') {
+    if (mapDialogData.socrata_url.trim().length === 0) {
       errors.socrata.push('A Socrata URL is required');
       errors.error = true;
     }
-    if (config.socrata_resource.trim().length === 0) {
+    if (mapDialogData.socrata_resource.trim().length === 0) {
       errors.socrata.push('A Socrata Resource Id is required');
       errors.error = true;
     }
     //TODO column validation
   }
-  if (config.presentation_marker === 'icon') {
-    if (config.icon_url.trim().length === 0) {
+  if (mapDialogData.presentation_marker === 'icon') {
+    if (mapDialogData.icon_url.trim().length === 0) {
       errors.icon.push('A Marker Icon Url is required');
       errors.error = true;
     }
   }
-  if (config.presentation_marker === 'circle') {
-    if (config.circle_color.trim().length === 0) {
+  if (mapDialogData.presentation_marker === 'circle') {
+    if (mapDialogData.circle_color.trim().length === 0) {
       errors.circle.push('A Circle Marker Color is required');
       errors.error = true;
     }
@@ -91,8 +99,8 @@ const errorMsgs = () => {
 const validPanel = () => {
   const errors = errorMsgs();
   let panelName = '';
-  Object.keys(nycPanels).forEach(key => {
-    if (nycPanels[key] === currentPanel) {
+  Object.keys(panels).forEach(key => {
+    if (panels[key] === currentPanel) {
       panelName = key;
     }
   });
@@ -107,62 +115,55 @@ const nextPanel = (dia, obj) => {
   let nextPanel;
   const data = dia.getData();
   const next = obj.name === 'next';
-  if (currentPanel === nycPanels.style) {
-    nextPanel = nycPanels.search;
+  if (currentPanel === panels.style) {
+    nextPanel = panels.search;
   }
-  if (currentPanel === nycPanels.search) {
+  if (currentPanel === panels.search) {
     if (next) {
-      nextPanel = data.search_location !== 'none' ? nycPanels.geoclient : nycPanels.data;
+      nextPanel = data.search_location !== 'none' ? panels.geoclient : panels.data;
     } else {
-      nextPanel = nycPanels.style;
+      nextPanel = panels.style;
     }
   }
-  if (currentPanel === nycPanels.geoclient) {
-    nextPanel = next ? nycPanels.data : nycPanels.search;
+  if (currentPanel === panels.geoclient) {
+    nextPanel = next ? panels.data : panels.search;
   }
-  if (currentPanel === nycPanels.data) {
+  if (currentPanel === panels.data) {
     if (next) {
       if (data.data_source === 'csv') {
-        nextPanel = nycPanels.csv;
+        nextPanel = panels.csv;
       } else if (data.data_source === 'socrata') {
-        nextPanel = nycPanels.socrata;
+        nextPanel = panels.socrata;
       } else {
-        nextPanel = nycPanels.start;
+        nextPanel = panels.start;
       }
     } else {
-      nextPanel = nycPanels.search;
+      nextPanel = panels.search;
     }
   }
-  if (currentPanel === nycPanels.csv) {
-    nextPanel = next ? nycPanels.presentation : nycPanels.data;
+  if (currentPanel === panels.csv) {
+    nextPanel = next ? panels.presentation : panels.data;
   }
-  if (currentPanel === nycPanels.socrata) {
-    nextPanel = next ? nycPanels.columns : nycPanels.data;
+  if (currentPanel === panels.socrata) {
+    nextPanel = next ? panels.columns : panels.data;
   }
-  if (currentPanel === nycPanels.columns) {
-    nextPanel = next ? nycPanels.presentation : nycPanels.socrata;
+  if (currentPanel === panels.columns) {
+    nextPanel = next ? panels.presentation : panels.socrata;
   }
-  if (currentPanel === nycPanels.presentation) {
+  if (currentPanel === panels.presentation) {
     if (next) {
-      nextPanel = data.presentation_marker === 'icon' ? nycPanels.icon : nycPanels.circle;
+      nextPanel = data.presentation_marker === 'icon' ? panels.icon : panels.circle;
     } else {
-      nextPanel = nycPanels.data;
+      nextPanel = panels.data;
     }
   }
-  if (currentPanel === nycPanels.icon || currentPanel === nycPanels.circle) {
-    nextPanel = nycPanels.presentation;
+  if (currentPanel === panels.icon || currentPanel === panels.circle) {
+    nextPanel = panels.presentation;
   }
-  if (currentPanel === nycPanels.start) {
-    nextPanel = nycPanels.data;
+  if (currentPanel === panels.start) {
+    nextPanel = panels.data;
   }
   return nextPanel;
-};
-
-const update = (data) => {
-  Object.keys(data).forEach(key => {
-    config[key] = data[key];
-  });
-  console.warn(config);
 };
 
 const canSave = (dia) => {
@@ -174,28 +175,30 @@ const canSave = (dia) => {
   }
 };
 
-const onChange = (dia, obj) => {
-  console.warn(obj);
-  update(dia.getData());
+const onChange = (dia) => {
+  const data = dia.getData();
+  Object.keys(data).forEach(key => {
+    mapDialogData[key] = data[key];
+  });
   canSave(dia);
 };
 
 const onAction = (dia, obj) => {
   if (validPanel() || obj.name === 'previous') {
     currentPanel = nextPanel(dia, obj);
-    currentPanel.initialData = config;
+    currentPanel.initialData = mapDialogData;
     dia.redial(currentPanel);
-    if (currentPanel === nycPanels.start) {
+    if (currentPanel === panels.start) {
       dia.disable('next');
     } else {
       dia.enable('next');
     }
-    if (currentPanel === nycPanels.style) {
+    if (currentPanel === panels.style) {
       dia.disable('previous');
     } else {
       dia.enable('previous');
     }
-    if (currentPanel === nycPanels.columns) {
+    if (currentPanel === panels.columns) {
       //get cols from socrata
     }
   }
@@ -203,19 +206,21 @@ const onAction = (dia, obj) => {
 };
 
 const onSubmit = (dia, obj) => {
-
+  const mapHtmlElements = DataToHtml.htmlFromData(editor, mapDialogData);
+  console.warn(mapHtmlElements);
+  
 };
 
-nycPanels.panels.forEach(panel => {
-  panel.buttons = nycButtons.buttons;
+panels.panels.forEach(panel => {
+  panel.buttons = buttons.buttons;
   panel.onChange = onChange;
   panel.onAction = onAction;
   panel.onSubmit = onSubmit;
 });
 
 export default {
-  showDialog: (ed) => {
+  showDialog: (ed : Editor) => {
     editor = ed;
-    editor.windowManager.open(nycPanels.style);
+    editor.windowManager.open(panels.style);
   }
 }

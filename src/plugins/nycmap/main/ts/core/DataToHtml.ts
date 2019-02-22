@@ -1,156 +1,207 @@
-/**
- * Copyright (c) Tiny Technologies, Inc. All rights reserved.
- * Licensed under the LGPL or a commercial license.
- * For LGPL see License.txt in the project root for license information.
- * For commercial licenses see https://www.tiny.cloud/
- */
-
-import Tools from 'tinymce/core/api/util/Tools';
-import Settings from '../api/Settings';
-import HtmlToData from './HtmlToData';
-import Mime from './Mime';
-import UpdateHtml from './UpdateHtml';
-import * as UrlPatterns from './UrlPatterns';
-import VideoScript from './VideoScript';
 import { Editor } from 'tinymce/core/api/Editor';
 
-export interface MediaDialogData {
-  allowFullscreen: boolean;
-  source1: string;
-  source1mime: string;
-  width: number;
-  height: number;
-  embed: string;
-  poster: string;
-  source2: string;
-  source2mime: string;
-  type: 'iframe' | 'script';
-}
+const NYC_LIB_VER = 'v1.2.37';
+const NYC_LIB_URL = `https://maps.nyc.gov/nyc-lib/${NYC_LIB_VER}`;
+const NYC_LIB_MIN_CSS = {id: 'nyc-map-min-css', class: 'nyc-map-dependency', rel: 'stylesheet', href: `${NYC_LIB_URL}/css/nyc-basic-lib.css`};
+const NYC_LIB_FULL_CSS = {id: 'nyc-map-full-css', class: 'nyc-map-dependency', rel: 'stylesheet', href: `${NYC_LIB_URL}/css/nyc-ol-lib.css`};
+const FONT_AWESOME_DEPENDENCY = {id: 'nyc-map-fa', class: 'nyc-map-dependency', rel: 'stylesheet', href: 'https://use.fontawesome.com/releases/v5.7.1/css/all.css'};
+const PAPA_DEPENDENCY = {id: 'nyc-map-papa', class: 'nyc-map-dependency', src: 'https://cdnjs.cloudflare.com/ajax/libs/PapaParse/4.4.0/papaparse.min.js'},
+const SCRIPT_DEPENDENCIES = [
+  {id: 'nyc-map-proj4', class: 'nyc-map-dependency', src: 'https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.3.15/proj4.js'},
+  {id: 'nyc-map-ol', class: 'nyc-map-dependency', src: 'https://cdn.rawgit.com/openlayers/openlayers.github.io/master/en/v5.3.0/build/ol.js'},
+  {id: 'nyc-map-polyfill', class: 'nyc-map-dependency', src:`${NYC_LIB_URL}/js/babel-polyfill.js`},
+  {id: 'nyc-map-lib', class: 'nyc-map-dependency', src:`${NYC_LIB_URL}/js/nyc-ol-lib.js`}
+];
+const JQUERY_DEPENDENCY = {id: 'nyc-map-jq', class: 'nyc-map-dependency', src: 'https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js'};
 
-export type DataToHtmlCallback = (data: MediaDialogData) => string;
-
-const getIframeHtml = function (data: MediaDialogData) {
-  const allowFullscreen = data.allowFullscreen ? ' allowFullscreen="1"' : '';
-  return '<iframe src="' + data.source1 + '" width="' + data.width + '" height="' + data.height + '"' + allowFullscreen + '></iframe>';
+export interface MapDialogData {
+  style_style: string;
+  search_location: string;
+  geoclient_url: string;
+  geoclient_app: string;
+  geoclient_key: string;
+  data_source: string;
+  csv_url: string;
+  socrata_url: string;
+  socrata_resource: string;
+  presentation_name: string,
+  presentation_list: string;
+  presentation_marker: string;
+  circle_color: string;
+  icon_url: string;
+  start_at: string;
+  ID: string;
+  NAME: string;
+  ADDR1: string;
+  ADDR2: string;
+  CITY: string;
+  BORO: string;
+  STATE: string;
+  ZIP: string;
+  PHONE: string;
+  EMAIL: string;
+  WEBSITE: string;
+  DETAIL: string;
 };
 
-const getFlashHtml = function (data: MediaDialogData) {
-  let html = '<object data="' + data.source1 + '" width="' + data.width + '" height="' + data.height + '" type="application/x-shockwave-flash">';
+export interface MapHtmlElements {
+  head: string;
+  search: string;
+  map: string;
+  list: string;
+  script: string;
+};
 
-  if (data.poster) {
-    html += '<img src="' + data.poster + '" width="' + data.width + '" height="' + data.height + '" />';
+const createHtmlElement = (doc, type, obj) => {
+  const element = doc.createElement(type);
+  Object.keys(obj).forEach(attr => {
+    element.setAttribute(attr, obj[attr]);
+  });
+  return element;
+};
+
+const headElements = (args) => {
+  const doc = args.doc;
+  const data = args.data;
+  const elements = [];
+  if (args.win.jQuery === undefined) {
+    elements.push(createHtmlElement(doc, 'script', JQUERY_DEPENDENCY));
   }
-
-  html += '</object>';
-
-  return html;
-};
-
-const getAudioHtml = function (data: MediaDialogData, audioTemplateCallback: DataToHtmlCallback) {
-  if (audioTemplateCallback) {
-    return audioTemplateCallback(data);
-  } else {
-    return (
-      '<audio controls="controls" src="' + data.source1 + '">' +
-      (
-        data.source2 ?
-          '\n<source src="' + data.source2 + '"' +
-          (data.source2mime ? ' type="' + data.source2mime + '"' : '') +
-          ' />\n' : '') +
-      '</audio>'
-    );
-  }
-};
-
-const getVideoHtml = function (data: MediaDialogData, videoTemplateCallback: DataToHtmlCallback) {
-  if (videoTemplateCallback) {
-    return videoTemplateCallback(data);
-  } else {
-    return (
-      '<video width="' + data.width +
-      '" height="' + data.height + '"' +
-      (data.poster ? ' poster="' + data.poster + '"' : '') + ' controls="controls">\n' +
-      '<source src="' + data.source1 + '"' +
-      (data.source1mime ? ' type="' + data.source1mime + '"' : '') + ' />\n' +
-      (data.source2 ? '<source src="' + data.source2 + '"' +
-        (data.source2mime ? ' type="' + data.source2mime + '"' : '') + ' />\n' : '') +
-      '</video>'
-    );
-  }
-};
-
-const getScriptHtml = function (data: MediaDialogData) {
-  return '<script src="' + data.source1 + '"></script>';
-};
-
-const dataToHtml = function (editor: Editor, dataIn: MediaDialogData) {
-  const data: MediaDialogData = Tools.extend({}, dataIn);
-
-  if (!data.source1) {
-    Tools.extend(data, HtmlToData.htmlToData(Settings.getScripts(editor), data.embed));
-    if (!data.source1) {
-      return '';
+  if (data.data_source !== 'none') {
+    if (doc.getElementById(PAPA_DEPENDENCY.id) === null) { 
+      elements.push(createHtmlElement(doc, 'script', PAPA_DEPENDENCY));
     }
   }
-
-  if (!data.source2) {
-    data.source2 = '';
-  }
-
-  if (!data.poster) {
-    data.poster = '';
-  }
-
-  data.source1 = editor.convertURL(data.source1, 'source');
-  data.source2 = editor.convertURL(data.source2, 'source');
-  data.source1mime = Mime.guess(data.source1);
-  data.source2mime = Mime.guess(data.source2);
-  data.poster = editor.convertURL(data.poster, 'poster');
-
-  const pattern = UrlPatterns.matchPattern(data.source1);
-
-  if (pattern) {
-    data.source1 = pattern.url;
-    data.type = pattern.type;
-    data.allowFullscreen = pattern.allowFullscreen;
-    data.width = data.width || pattern.w;
-    data.height = data.height || pattern.h;
-  }
-
-  if (data.embed) {
-    return UpdateHtml.updateHtml(data.embed, data, true);
-  } else {
-    const videoScript = VideoScript.getVideoScriptMatch(Settings.getScripts(editor), data.source1);
-    if (videoScript) {
-      data.type = 'script';
-      data.width = videoScript.width;
-      data.height = videoScript.height;
+  SCRIPT_DEPENDENCIES.forEach(script => {
+    if (doc.getElementById(script.id) === null) {
+      elements.push(createHtmlElement(doc, 'script', script));
     }
+  });
+  if (doc.getElementById(FONT_AWESOME_DEPENDENCY.id) === null) {
+    elements.push(createHtmlElement(doc, 'link', FONT_AWESOME_DEPENDENCY));
+  }
+  if (data.style_style === 'min') {
+    if (doc.getElementById(NYC_LIB_MIN_CSS.id) === null) {
+      elements.push(createHtmlElement(doc, 'link', NYC_LIB_MIN_CSS));
+    }
+  } else {
+    if (doc.getElementById(NYC_LIB_FULL_CSS.id) === null) {
+      elements.push(createHtmlElement(doc, 'link', NYC_LIB_FULL_CSS));
+    }
+  }
+  return elements;
+};
 
-    const audioTemplateCallback = Settings.getAudioTemplateCallback(editor);
-    const videoTemplateCallback = Settings.getVideoTemplateCallback(editor);
-
-    data.width = data.width || 300;
-    data.height = data.height || 150;
-
-    Tools.each(data, function (value, key) {
-      data[key] = editor.dom.encode(value);
+const searchElement = (args) => {
+  if (args.data.search_location === 'above') {
+    return createHtmlElement(args.doc, 'input', {
+      id: `nyc-map-search-${args.instances}`,
+      class: `nyc-map-search nyc-map-instance-${args.instances}`
     });
+  }
+};
 
-    if (data.type === 'iframe') {
-      return getIframeHtml(data);
-    } else if (data.source1mime === 'application/x-shockwave-flash') {
-      return getFlashHtml(data);
-    } else if (data.source1mime.indexOf('audio') !== -1) {
-      return getAudioHtml(data, audioTemplateCallback);
-    } else if (data.type === 'script') {
-      return getScriptHtml(data);
-    } else {
-      return getVideoHtml(data, videoTemplateCallback);
+const mapElement = (args) => {
+  return createHtmlElement(args.doc, 'div', {
+    id: `nyc-map-${args.instances}`,
+    class: `nyc-map-instance nyc-map-instance-${args.instances}`
+  });
+};
+
+const listElement = (args) => {
+  if (args.data.presentation_list === 'yes') {
+    return createHtmlElement(args.doc, 'div', {
+      id: `nyc-map-list-${args.instances}`,
+      class: `nyc-map-list nyc-map-instance-${args.instances}`
+    });
+  }
+};
+
+const socrataSql = (data : MapDialogData) => {
+  return '';
+};
+
+const dataUrl = (data : MapDialogData) => {
+  if (data.data_source === 'csv') {
+    return data.csv_url;
+  }
+  const sql = socrataSql(data);
+  return `${data.socrata_url}/resource/${data.socrata_resource}.json?${sql}`;
+};
+
+const searchOtions = (args: any, mapOptions : any) => {
+  const data = args.data;
+  const instances = args.instances;
+  if (data.search_location !== 'none') {
+    mapOptions.geoclientUrl = `${data.geoclient_url}/search.json?app_id=${data.geoclient_app}&app_key=${data.geoclient_key}`;
+    if (data.search_location === 'above') {
+      mapOptions.searchTarget = `#nyc-map-search-${instances}`;
     }
   }
+};
+
+const dataOtions = (args: any, mapOptions : any) => {
+  const data = args.data;
+  const instances = args.instances;
+  if (data.data_source !== 'none') {
+    mapOptions.facilityUrl = dataUrl(data);
+    if (data.presentation_list === 'yes') {
+      mapOptions.searchTarget = `#nyc-map-list-${instances}`;
+    }
+    if (data.presentation_name.trim() !== '') {
+      mapOptions.facilityType = data.presentation_name;
+    }
+    if (data.presentation_marker === 'icon') {
+      mapOptions.mapMarkerUrl = data.icon_url;
+    } else {
+      mapOptions.mapMarkerColor = data.circle_color;
+    }
+  }
+};
+
+const mapOptions = (args) => {
+  const mapOptions : any = {
+    mapTarget: `#nyc-map-${args.instances}`
+  };
+  searchOtions(args, mapOptions);
+  dataOtions(args, mapOptions);
+  return JSON.stringify(mapOptions, null, 2);
+};
+
+const scriptElement = (args) => {
+  const instances = args.instances;
+  const script = createHtmlElement(args.doc, 'script', {
+    id: `nyc-map-list-${instances}`,
+    class: `nyc-map-list nyc-map-instance-${instances}`
+  });
+  const options = mapOptions(args);
+  script.innerHTML = `
+    $(document).ready({
+      var nycMap${instances} = new nyc.ol.FrameworkMap(
+        ${options}
+      );
+    });
+  `;
+  return script;
+};
+
+const htmlFromData = (editor : Editor, mapDialogData : MapDialogData) => {
+  const doc = editor.getDoc();
+  const args = {
+    win: editor.getWin(),
+    doc: doc,
+    instances: doc.getElementsByClassName('nyc-map-instance').length,
+    data: mapDialogData
+  };
+  return {
+    head: headElements(args),
+    search: searchElement(args),
+    map: mapElement(args),
+    list: listElement(args),
+    script: scriptElement(args)
+  };
 };
 
 export default {
-  dataToHtml
+  htmlFromData
 };
