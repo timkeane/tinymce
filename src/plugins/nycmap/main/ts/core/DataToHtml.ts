@@ -13,7 +13,8 @@ const OL_JS = {id: 'nyc-map-ol', class: 'nyc-map-dependency', src: 'https://cdn.
 const PAPA_JS = {id: 'nyc-map-papa', class: 'nyc-map-dependency', src: 'https://cdnjs.cloudflare.com/ajax/libs/PapaParse/4.4.0/papaparse.min.js'},
 const POLYFILL_JS = {id: 'nyc-map-polyfill', class: 'nyc-map-dependency', src:`${NYC_LIB_URL}/js/babel-polyfill.js`};
 const NYC_LIB_JS = {id: 'nyc-map-lib', class: 'nyc-map-dependency', src:`${NYC_LIB_URL}/js/nyc-ol-lib.js`}
-const CSV_COLUMNS = ['ID', 'X', 'Y', 'LNG', 'LAT', 'NAME', 'ADDR1', 'ADDR2', 'CITY', 'BORO', 'STATE', 'ZIP', 'PHONE', 'EMAIL', 'WEBSITE', 'DETAIL'];
+
+export const CSV_COLUMNS = ['ID', 'X', 'Y', 'LNG', 'LAT', 'NAME', 'ADDR1', 'ADDR2', 'CITY', 'BORO', 'STATE', 'ZIP', 'PHONE', 'EMAIL', 'WEBSITE', 'DETAIL'];
 
 export interface MapDialogData {
   instance: string;
@@ -188,7 +189,7 @@ const mapOptions = (args) => {
   };
   searchOtions(args, mapOptions);
   dataOtions(args, mapOptions);
-  return JSON.stringify(mapOptions, null, 2);
+  return JSON.stringify(mapOptions);
 };
 
 const scriptElement = (args) => {

@@ -2,18 +2,18 @@ import panels from './Panels';
 import buttons from './DialogButtons';
 import { MapDialogData } from '../core/DataToHtml'
 import DataToHtml from '../core/DataToHtml'
+import HtmlToData from '../core/HtmlToData'
 import { alert } from '@ephox/dom-globals';
 import { Editor } from 'tinymce/core/api/Editor';
 import UpdateHtml from '../core/UpdateHtml';
 import { showColumns } from './ColumnsPanel';
 
-const SOCRATA_URL = 'https://data.cityofnewyork.us';
-const GEOCLIENT_URL = 'https://maps.nyc.gov/geoclient/v1';
-
 let diaData : MapDialogData;
 let editor : Editor;
 let currentPanel;
-let colorHack; /* colorpicker in CirclePanel does not fire the dialog change event */
+
+/* colorpicker in CirclePanel does not fire the dialog change event */
+let colorChangeHack;
 
 const errorMsgs = () => {
   const errors = {
@@ -162,10 +162,7 @@ const canSave = (dia) => {
 };
 
 const onChange = (dia) => {
-  const data = dia.getData();
-  Object.keys(data).forEach(key => {
-    diaData[key] = data[key];
-  });
+  Object.assign(diaData, dia.getData());
   canSave(dia);
 };
 
@@ -179,7 +176,6 @@ const onAction = (dia, obj) => {
       });
     } else {
       currentPanel.initialData = diaData;
-      console.warn(currentPanel);
       dia.redial(currentPanel);
       }
     if (currentPanel === panels.start) {
@@ -195,11 +191,11 @@ const onAction = (dia, obj) => {
   }
   canSave(dia);
   if (currentPanel === panels.circle) {
-    colorHack = setInterval(() => {
+    colorChangeHack = setInterval(() => {
       onChange(dia);
     }, 100);
   } else {
-    clearInterval(colorHack);
+    clearInterval(colorChangeHack);
   }
 };
 
@@ -213,7 +209,7 @@ const onSubmit = (dia) => {
   setTimeout(() => {
     editor.windowManager.close();
   }, 1000);
-  clearInterval(colorHack);
+  clearInterval(colorChangeHack);
 };
 
 const panelAddOns = {
@@ -227,44 +223,12 @@ panels.panels.forEach(panel => {
   Object.assign(panel, panelAddOns);
 });
 
+
 export default {
   showDialog: (ed : Editor) => {
     editor = ed;
     currentPanel = panels.style;
-    diaData = {
-      instance: '',
-      style_style: 'min',
-      search_location: 'none',
-      geoclient_url: GEOCLIENT_URL,
-      geoclient_app: '',
-      geoclient_key: '',
-      data_source: 'none',
-      csv_url: '',
-      socrata_url: SOCRATA_URL,
-      socrata_resource: '',
-      presentation_name: '',
-      presentation_list: '',
-      presentation_marker: 'circle',
-      circle_color: '#0000ff',
-      icon_url: '',
-      start_at: '',
-      ID: '',
-      X: '',
-      Y: '',
-      LNG: '',
-      LAT: '',
-      NAME: '',
-      ADDR1: '',
-      ADDR2: '',
-      CITY: '',
-      BORO: '',
-      STATE: '',
-      ZIP: '',
-      PHONE: '',
-      EMAIL: '',
-      WEBSITE: '',
-      DETAIL: ''
-    };
+    diaData = HtmlToData.dataFromHtml(editor);
     editor.windowManager.open(panels.style);
   }
 };
