@@ -4,7 +4,7 @@ let editor;
 let doc;
 
 const observer = new MutationObserver(mutationsList => {
-  for(var mutation of mutationsList) {
+  for(const mutation of mutationsList) {
     listenAsNeeded(Array.from(mutation.addedNodes));
     removeAsNeeded(Array.from(mutation.removedNodes));
   }
