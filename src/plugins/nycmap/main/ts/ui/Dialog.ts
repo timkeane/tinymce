@@ -5,42 +5,14 @@ import DataToHtml from '../core/DataToHtml'
 import { alert } from '@ephox/dom-globals';
 import { Editor } from 'tinymce/core/api/Editor';
 import UpdateHtml from '../core/UpdateHtml';
+import { showColumns } from './ColumnsPanel';
 
 const SOCRATA_URL = 'https://data.cityofnewyork.us';
 const GEOCLIENT_URL = 'https://maps.nyc.gov/geoclient/v1';
 
-const mapDialogData : MapDialogData = {
-  instance: '',
-  style_style: 'min',
-  search_location: 'none',
-  geoclient_url: GEOCLIENT_URL,
-  geoclient_app: '',
-  geoclient_key: '',
-  data_source: 'none',
-  csv_url: '',
-  socrata_url: SOCRATA_URL,
-  socrata_resource: '',
-  presentation_name: '',
-  presentation_list: '',
-  presentation_marker: 'circle',
-  circle_color: '#0000ff',
-  icon_url: '',
-  start_at: '',
-  ID: '',
-  NAME: '',
-  ADDR1: '',
-  ADDR2: '',
-  CITY: '',
-  BORO: '',
-  STATE: '',
-  ZIP: '',
-  PHONE: '',
-  EMAIL: '',
-  WEBSITE: '',
-  DETAIL: ''
-};
-let editor;
-let currentPanel = panels.style;
+let diaData : MapDialogData;
+let editor : Editor;
+let currentPanel;
 let colorHack; /* colorpicker in CirclePanel does not fire the dialog change event */
 
 const errorMsgs = () => {
@@ -53,45 +25,56 @@ const errorMsgs = () => {
     icon: [],
     circle: []
   };
-  if (mapDialogData.search_location !== 'none') {
-    if (mapDialogData.geoclient_url.trim().length === 0) {
+  if (diaData.search_location !== 'none') {
+    if (diaData.geoclient_url.trim().length === 0) {
       errors.geoclient.push('A Geoclient URL is required');
       errors.error = true;
     }
-    if (mapDialogData.geoclient_app.trim().length === 0) {
+    if (diaData.geoclient_app.trim().length === 0) {
       errors.geoclient.push('A Geoclient App Id is required');
       errors.error = true;
     }
-    if (mapDialogData.geoclient_key.trim().length === 0) {
+    if (diaData.geoclient_key.trim().length === 0) {
       errors.geoclient.push('A Geoclient App Key is required');
       errors.error = true;
     }
   }
-  if (mapDialogData.data_source === 'csv') {
-    if (mapDialogData.csv_url.trim().length === 0) {
+  if (diaData.data_source === 'csv') {
+    if (diaData.csv_url.trim().length === 0) {
       errors.csv.push('A CSV URL is required');
       errors.error = true;
     }
   }
-  if (mapDialogData.data_source === 'socrata') {
-    if (mapDialogData.socrata_url.trim().length === 0) {
+  if (diaData.data_source === 'socrata') {
+    if (diaData.socrata_url.trim().length === 0) {
       errors.socrata.push('A Socrata URL is required');
       errors.error = true;
     }
-    if (mapDialogData.socrata_resource.trim().length === 0) {
+    if (diaData.socrata_resource.trim().length === 0) {
       errors.socrata.push('A Socrata Resource Id is required');
       errors.error = true;
     }
-    //TODO column validation
+    if (diaData.NAME.trim().length === 0) {
+      errors.columns.push('A Socrate column must be mapped to NAME');
+      errors.error = true;
+    } 
+    if (diaData.ADDR1.trim().length === 0) {
+      errors.columns.push('A Socrate column must be mapped to ADDR1');
+      errors.error = true;
+    }
+    if (diaData.CITY.trim().length === 0 && diaData.BORO.trim().length === 0) {
+      errors.columns.push('A Socrate column must be mapped to CITY or BORO');
+      errors.error = true;
+    }
   }
-  if (mapDialogData.presentation_marker === 'icon') {
-    if (mapDialogData.icon_url.trim().length === 0) {
+  if (diaData.presentation_marker === 'icon') {
+    if (diaData.icon_url.trim().length === 0) {
       errors.icon.push('A Marker Icon Url is required');
       errors.error = true;
     }
   }
-  if (mapDialogData.presentation_marker === 'circle') {
-    if (mapDialogData.circle_color.trim().length === 0) {
+  if (diaData.presentation_marker === 'circle') {
+    if (diaData.circle_color.trim().length === 0) {
       errors.circle.push('A Circle Marker Color is required');
       errors.error = true;
     }
@@ -181,7 +164,7 @@ const canSave = (dia) => {
 const onChange = (dia) => {
   const data = dia.getData();
   Object.keys(data).forEach(key => {
-    mapDialogData[key] = data[key];
+    diaData[key] = data[key];
   });
   canSave(dia);
 };
@@ -189,8 +172,16 @@ const onChange = (dia) => {
 const onAction = (dia, obj) => {
   if (validPanel() || obj.name === 'previous') {
     currentPanel = nextPanel(dia, obj);
-    currentPanel.initialData = mapDialogData;
-    dia.redial(currentPanel);
+    if (currentPanel === panels.columns) {
+      showColumns(diaData, panel => {
+        panel.initialData = diaData;
+        dia.redial(panel);
+      });
+    } else {
+      currentPanel.initialData = diaData;
+      console.warn(currentPanel);
+      dia.redial(currentPanel);
+      }
     if (currentPanel === panels.start) {
       dia.disable('next');
     } else {
@@ -200,9 +191,6 @@ const onAction = (dia, obj) => {
       dia.disable('previous');
     } else {
       dia.enable('previous');
-    }
-    if (currentPanel === panels.columns) {
-      //get cols from socrata
     }
   }
   canSave(dia);
@@ -216,7 +204,7 @@ const onAction = (dia, obj) => {
 };
 
 const onSubmit = (dia) => {
-  const mapHtmlElements = DataToHtml.htmlFromData(editor, mapDialogData);
+  const mapHtmlElements = DataToHtml.htmlFromData(editor, diaData);
   UpdateHtml.updateHtml(editor, mapHtmlElements);
   dia.disable('previous');
   dia.disable('next');
@@ -228,16 +216,55 @@ const onSubmit = (dia) => {
   clearInterval(colorHack);
 };
 
+const panelAddOns = {
+  buttons: buttons.buttons,
+  onChange: onChange,
+  onAction: onAction,
+  onSubmit: onSubmit
+};
+
 panels.panels.forEach(panel => {
-  panel.buttons = buttons.buttons;
-  panel.onChange = onChange;
-  panel.onAction = onAction;
-  panel.onSubmit = onSubmit;
+  Object.assign(panel, panelAddOns);
 });
 
 export default {
   showDialog: (ed : Editor) => {
     editor = ed;
+    currentPanel = panels.style;
+    diaData = {
+      instance: '',
+      style_style: 'min',
+      search_location: 'none',
+      geoclient_url: GEOCLIENT_URL,
+      geoclient_app: '',
+      geoclient_key: '',
+      data_source: 'none',
+      csv_url: '',
+      socrata_url: SOCRATA_URL,
+      socrata_resource: '',
+      presentation_name: '',
+      presentation_list: '',
+      presentation_marker: 'circle',
+      circle_color: '#0000ff',
+      icon_url: '',
+      start_at: '',
+      ID: '',
+      X: '',
+      Y: '',
+      LNG: '',
+      LAT: '',
+      NAME: '',
+      ADDR1: '',
+      ADDR2: '',
+      CITY: '',
+      BORO: '',
+      STATE: '',
+      ZIP: '',
+      PHONE: '',
+      EMAIL: '',
+      WEBSITE: '',
+      DETAIL: ''
+    };
     editor.windowManager.open(panels.style);
   }
 };

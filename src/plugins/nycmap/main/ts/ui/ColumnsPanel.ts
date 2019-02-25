@@ -1,3 +1,5 @@
+import XHR from 'tinymce/core/api/util/XHR'
+
 const panel : any = { 
   title: 'NYC Map - Socrata Columns',
   body: {
@@ -7,76 +9,118 @@ const panel : any = {
         type: 'selectbox',
         name: 'ID',
         label: 'ID',
-        items: []
+        items: [{text: '', value: ''}]
+      },
+      {
+        type: 'selectbox',
+        name: 'X',
+        label: 'X',
+        items: [{text: '', value: ''}]
+      },
+      {
+        type: 'selectbox',
+        name: 'Y',
+        label: 'Y',
+        items: [{text: '', value: ''}]
+      },
+      {
+        type: 'selectbox',
+        name: 'LNG',
+        label: 'LNG',
+        items: [{text: '', value: ''}]
+      },
+      {
+        type: 'selectbox',
+        name: 'LAT',
+        label: 'LAT',
+        items: [{text: '', value: ''}]
       },
       {
         type: 'selectbox',
         name: 'NAME',
         label: 'NAME',
-        items: []
+        items: [{text: '', value: ''}]
       },
       {
         type: 'selectbox',
         name: 'ADDR1',
         label: 'ADDR1',
-        items: []
+        items: [{text: '', value: ''}]
       },
       {
         type: 'selectbox',
         name: 'ADDR2',
         label: 'ADDR2',
-        items: []
+        items: [{text: '', value: ''}]
       },
       {
         type: 'selectbox',
         name: 'CITY',
         label: 'CITY',
-        items: []
+        items: [{text: '', value: ''}]
       },
       {
         type: 'selectbox',
         name: 'BORO',
         label: 'BORO',
-        items: []
+        items: [{text: '', value: ''}]
       },
       {
         type: 'selectbox',
         name: 'STATE',
         label: 'STATE',
-        items: []
+        items: [{text: '', value: ''}]
       },
       {
         type: 'selectbox',
         name: 'ZIP',
         label: 'ZIP',
-        items: []
+        items: [{text: '', value: ''}]
       },
       {
         type: 'selectbox',
         name: 'PHONE',
         label: 'PHONE',
-        items: []
+        items: [{text: '', value: ''}]
       },
       {
         type: 'selectbox',
         name: 'EMAIL',
         label: 'EMAIL',
-        items: []
+        items: [{text: '', value: ''}]
       },
       {
         type: 'selectbox',
         name: 'WEBSITE',
         label: 'WEBSITE',
-        items: []
+        items: [{text: '', value: ''}]
       },
       {
         type: 'selectbox',
         name: 'DETAIL',
         label: 'DETAIL',
-        items: []
+        items: [{text: '', value: ''}]
       }
     ]
   }
+};
+
+export const showColumns = (data, callback) => {
+  const pnl = panel;
+  XHR.send({
+    url: `${data.socrata_url}/resource/${data.socrata_resource}.csv?$where=${encodeURIComponent('0=1')}`,
+    success: (columns) => {
+      columns.split(',').forEach(col => {
+        const socrata = col.replace(/"/g, '')
+        pnl.body.items.forEach(it => {
+          it.items.push({text: socrata, value: socrata});
+        });
+      });
+      console.warn(pnl);
+      callback(pnl);
+    }
+ });
+  
 };
 
 export default panel;

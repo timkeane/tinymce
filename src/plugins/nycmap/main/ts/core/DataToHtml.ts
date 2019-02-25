@@ -13,6 +13,7 @@ const OL_JS = {id: 'nyc-map-ol', class: 'nyc-map-dependency', src: 'https://cdn.
 const PAPA_JS = {id: 'nyc-map-papa', class: 'nyc-map-dependency', src: 'https://cdnjs.cloudflare.com/ajax/libs/PapaParse/4.4.0/papaparse.min.js'},
 const POLYFILL_JS = {id: 'nyc-map-polyfill', class: 'nyc-map-dependency', src:`${NYC_LIB_URL}/js/babel-polyfill.js`};
 const NYC_LIB_JS = {id: 'nyc-map-lib', class: 'nyc-map-dependency', src:`${NYC_LIB_URL}/js/nyc-ol-lib.js`}
+const CSV_COLUMNS = ['ID', 'X', 'Y', 'LNG', 'LAT', 'NAME', 'ADDR1', 'ADDR2', 'CITY', 'BORO', 'STATE', 'ZIP', 'PHONE', 'EMAIL', 'WEBSITE', 'DETAIL'];
 
 export interface MapDialogData {
   instance: string;
@@ -32,6 +33,10 @@ export interface MapDialogData {
   icon_url: string;
   start_at: string;
   ID: string;
+  X: string;
+  Y: string;
+  LNG: string;
+  LAT: string;
   NAME: string;
   ADDR1: string;
   ADDR2: string;
@@ -58,6 +63,7 @@ const createHtmlElement = (doc, type, obj) => {
   Object.keys(obj).forEach(attr => {
     element.setAttribute(attr, obj[attr]);
   });
+  element.className = `nyc-map ${element.className}`.trim();
   return element;
 };
 
@@ -112,8 +118,8 @@ const searchElement = (args) => {
 
 const mapElement = (args) => {
   return createHtmlElement(args.doc, 'div', {
-    id: `nyc-map-${args.instance}`,
-    class: `nyc-map-instance nyc-map-instance-${args.instance}`
+    id: `nyc-map-instance-${args.instance}`,
+    class: `nyc-map-selectable nyc-map-instance nyc-map-instance-${args.instance}`
   });
 };
 
@@ -121,13 +127,20 @@ const listElement = (args) => {
   if (args.data.presentation_list === 'yes') {
     return createHtmlElement(args.doc, 'div', {
       id: `nyc-map-list-${args.instance}`,
-      class: `nyc-map-list nyc-map-instance-${args.instance}`
+      class: `nyc-map-selectable nyc-map-list nyc-map-instance-${args.instance}`
     });
   }
 };
 
 const socrataSql = (data : MapDialogData) => {
-  return '';
+  const select = [];
+  CSV_COLUMNS.forEach(csv => {
+    const socrata = data[csv];
+    if (socrata) {
+      select.push(`${socrata} as ${csv}`);
+    }
+  });
+  return `$select=${encodeURIComponent(select.join(','))}`;
 };
 
 const dataUrl = (data : MapDialogData) => {
@@ -135,7 +148,7 @@ const dataUrl = (data : MapDialogData) => {
     return data.csv_url;
   }
   const sql = socrataSql(data);
-  return `${data.socrata_url}/resource/${data.socrata_resource}.json?${sql}`;
+  return `${data.socrata_url}/resource/${data.socrata_resource}.csv?${sql}&$limit=2000000`;
 };
 
 const searchOtions = (args: any, mapOptions : any) => {
@@ -171,7 +184,7 @@ const dataOtions = (args: any, mapOptions : any) => {
 
 const mapOptions = (args) => {
   const mapOptions : any = {
-    mapTarget: `#nyc-map-${args.instance}`
+    mapTarget: `#nyc-map-instance-${args.instance}`
   };
   searchOtions(args, mapOptions);
   dataOtions(args, mapOptions);
