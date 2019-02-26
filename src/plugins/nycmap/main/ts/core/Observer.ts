@@ -7,7 +7,7 @@ let doc;
 const observer = new MutationObserver(mutationsList => {
   for (const mutation of mutationsList) {
     listenAsNeeded(Array.from(mutation.addedNodes));
-    UpdateHtml.removeHtml(doc, Array.from(mutation.removedNodes));
+    UpdateHtml.removeHtml(editor, Array.from(mutation.removedNodes));
   }
 });
 

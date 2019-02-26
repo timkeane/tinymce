@@ -1,4 +1,4 @@
-import style from './StylePanel'
+import start from './StartPanel'
 import search from './SearchPanel'
 import geoclient from './GeoclientPanel'
 import data from './DataPanel'
@@ -8,10 +8,10 @@ import columns from './ColumnsPanel'
 import presentation from './PresentationPanel'
 import icon from './IconPanel'
 import circle from './CirclePanel'
-import start from './StartPanel'
+import style from './StylePanel'
 
 export default {
-  style: style,
+  start: start,
   search: search,
   geoclient: geoclient,
   data: data,
@@ -21,9 +21,9 @@ export default {
   presentation: presentation,
   icon: icon,
   circle: circle,
-  start: start,
+  style: style,
   panels: [
-    style,
+    start,
     search,
     geoclient,
     data,
@@ -33,6 +33,6 @@ export default {
     presentation,
     icon,
     circle,
-    start
+    style
   ]
 };

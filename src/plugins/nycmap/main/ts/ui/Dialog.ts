@@ -101,14 +101,14 @@ const nextPanel = (dia, obj) => {
   let nextPanel;
   const data = dia.getData();
   const next = obj.name === 'next';
-  if (currentPanel === panels.style) {
+  if (currentPanel === panels.start) {
     nextPanel = panels.search;
   }
   if (currentPanel === panels.search) {
     if (next) {
       nextPanel = data.search_location !== 'none' ? panels.geoclient : panels.data;
     } else {
-      nextPanel = panels.style;
+      nextPanel = panels.start;
     }
   }
   if (currentPanel === panels.geoclient) {
@@ -121,7 +121,7 @@ const nextPanel = (dia, obj) => {
       } else if (data.data_source === 'socrata') {
         nextPanel = panels.socrata;
       } else {
-        nextPanel = panels.start;
+        nextPanel = panels.style;
       }
     } else {
       nextPanel = panels.search;
@@ -146,7 +146,7 @@ const nextPanel = (dia, obj) => {
   if (currentPanel === panels.icon || currentPanel === panels.circle) {
     nextPanel = panels.presentation;
   }
-  if (currentPanel === panels.start) {
+  if (currentPanel === panels.style) {
     nextPanel = panels.data;
   }
   return nextPanel;
@@ -178,12 +178,12 @@ const onAction = (dia, obj) => {
       currentPanel.initialData = diaData;
       dia.redial(currentPanel);
       }
-    if (currentPanel === panels.start) {
+    if (currentPanel === panels.style) {
       dia.disable('next');
     } else {
       dia.enable('next');
     }
-    if (currentPanel === panels.style) {
+    if (currentPanel === panels.start) {
       dia.disable('previous');
     } else {
       dia.enable('previous');
@@ -223,12 +223,11 @@ panels.panels.forEach(panel => {
   Object.assign(panel, panelAddOns);
 });
 
-
 export default {
   showDialog: (ed : Editor) => {
     editor = ed;
-    currentPanel = panels.style;
+    currentPanel = panels.start;
     diaData = HtmlToData.dataFromHtml(editor);
-    editor.windowManager.open(panels.style);
+    editor.windowManager.open(panels.start);
   }
 };

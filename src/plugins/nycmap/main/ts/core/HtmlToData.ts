@@ -113,12 +113,6 @@ const mapMarkerFromOptions = (diaData, options) => {
   } else if (options.mapMarkerColor) {
     const rgb = options.mapMarkerColor;
     diaData.presentation_marker = 'circle';
-
-    console.warn(`rgb(${rgb.join(',')})`);
-    console.warn(Color(''));
-    console.warn(Color('').parse);
-    console.warn(Color('').parse(`rgb(${rgb.join(',')})`).toHex());
-    
     diaData.circle_color = Color('').parse(`rgb(${rgb.join(',')})`).toHex();
   }
 };
