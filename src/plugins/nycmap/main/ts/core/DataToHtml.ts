@@ -152,7 +152,7 @@ const dataUrl = (data : MapDialogData) => {
   return `${data.socrata_url}/resource/${data.socrata_resource}.csv?${sql}&$limit=2000000`;
 };
 
-const searchOtions = (args: any, mapOptions : any) => {
+const searchOptions = (args: any, mapOptions : any) => {
   const data = args.data;
   const instance = args.instance;
   if (data.search_location !== 'none') {
@@ -163,7 +163,7 @@ const searchOtions = (args: any, mapOptions : any) => {
   }
 };
 
-const dataOtions = (args: any, mapOptions : any) => {
+const dataOptions = (args: any, mapOptions : any) => {
   const data = args.data;
   const instance = args.instance;
   if (data.data_source !== 'none') {
@@ -183,12 +183,19 @@ const dataOtions = (args: any, mapOptions : any) => {
   }
 };
 
+const startOptions = (args, mapOptions) => {
+  if (args.data.start_at.trim() !== '') {
+    mapOptions.startAt = args.data.start_at;
+  }
+};
+
 const mapOptions = (args) => {
   const mapOptions : any = {
-    mapTarget: `#nyc-map-instance-${args.instance}`
+    mapTarget: `#nyc-map-instance-${args.instance}`,
   };
-  searchOtions(args, mapOptions);
-  dataOtions(args, mapOptions);
+  startOptions(args, mapOptions);
+  searchOptions(args, mapOptions);
+  dataOptions(args, mapOptions);
   return JSON.stringify(mapOptions);
 };
 

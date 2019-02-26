@@ -11,9 +11,9 @@ import circle from './CirclePanel'
 import style from './StylePanel'
 
 export default {
-  start: start,
   search: search,
   geoclient: geoclient,
+  start: start,
   data: data,
   csv: csv,
   socrata: socrata,
@@ -23,9 +23,9 @@ export default {
   circle: circle,
   style: style,
   panels: [
-    start,
     search,
     geoclient,
+    start,
     data,
     csv,
     socrata,

@@ -25,19 +25,17 @@ const errorMsgs = () => {
     icon: [],
     circle: []
   };
-  if (diaData.search_location !== 'none') {
-    if (diaData.geoclient_url.trim().length === 0) {
-      errors.geoclient.push('A Geoclient URL is required');
-      errors.error = true;
-    }
-    if (diaData.geoclient_app.trim().length === 0) {
-      errors.geoclient.push('A Geoclient App Id is required');
-      errors.error = true;
-    }
-    if (diaData.geoclient_key.trim().length === 0) {
-      errors.geoclient.push('A Geoclient App Key is required');
-      errors.error = true;
-    }
+  if (diaData.geoclient_url.trim().length === 0) {
+    errors.geoclient.push('A Geoclient URL is required');
+    errors.error = true;
+  }
+  if (diaData.geoclient_app.trim().length === 0) {
+    errors.geoclient.push('A Geoclient App Id is required');
+    errors.error = true;
+  }
+  if (diaData.geoclient_key.trim().length === 0) {
+    errors.geoclient.push('A Geoclient App Key is required');
+    errors.error = true;
   }
   if (diaData.data_source === 'csv') {
     if (diaData.csv_url.trim().length === 0) {
@@ -105,15 +103,14 @@ const nextPanel = (dia, obj) => {
     nextPanel = panels.search;
   }
   if (currentPanel === panels.search) {
-    if (next) {
-      nextPanel = data.search_location !== 'none' ? panels.geoclient : panels.data;
-    } else {
-      nextPanel = panels.start;
-    }
+    nextPanel = panels.geoclient;
   }
   if (currentPanel === panels.geoclient) {
-    nextPanel = next ? panels.data : panels.search;
+    nextPanel = next ? panels.start : panels.search;
   }
+  if (currentPanel === panels.start) {
+    nextPanel = next ? panels.data : panels.geoclient;
+  }  
   if (currentPanel === panels.data) {
     if (next) {
       if (data.data_source === 'csv') {
@@ -183,7 +180,7 @@ const onAction = (dia, obj) => {
     } else {
       dia.enable('next');
     }
-    if (currentPanel === panels.start) {
+    if (currentPanel === panels.search) {
       dia.disable('previous');
     } else {
       dia.enable('previous');
@@ -226,8 +223,8 @@ panels.panels.forEach(panel => {
 export default {
   showDialog: (ed : Editor) => {
     editor = ed;
-    currentPanel = panels.start;
+    currentPanel = panels.search;
     diaData = HtmlToData.dataFromHtml(editor);
-    editor.windowManager.open(panels.start);
+    editor.windowManager.open(panels.search);
   }
 };

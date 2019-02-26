@@ -10,7 +10,7 @@ const defaultData = () => {
   const diaData : MapDialogData = {
     instance: '',
     style_style: 'min',
-    search_location: 'none',
+    search_location: 'above',
     geoclient_url: GEOCLIENT_URL,
     geoclient_app: '',
     geoclient_key: '',
