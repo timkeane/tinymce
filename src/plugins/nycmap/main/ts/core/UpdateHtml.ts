@@ -87,17 +87,38 @@ const updateMapScript = (editor, doc, script) => {
   }
 };
 
-const remove = (node) => {
-  if (node) node.remove();
+
+const removeHtml = (doc, removed) => {
+  for (let i = 0; i < removed.length; i++) {
+    const node : any = removed[i];
+    const className = node.className || '';
+    if (className.indexOf('nyc-map') > -1) {
+      mapNodeRemoved(doc, node);
+    }
+  }
 };
 
-const removeHtml = (editor : Editor, html : MapHtmlElements) => {
-  html.head.forEach(node => {
-    remove(node);
-  });
-  remove(html.search);
-  remove(html.map);
-  remove(html.list);
+const mapNodeRemoved = (doc, node) => {
+  const id = node.id;
+  if (id && id.indexOf('map-instance-') > -1) {
+    remove(doc.getElementsByClassName(id));
+  }
+  removeAll(doc);
+};
+
+const removeAll = (doc) => {
+  if (doc.getElementsByClassName('nyc-map-instance').length === 0) {
+    remove(doc.getElementsByClassName('nyc-map'));
+  }
+};
+
+const remove = nodes => {
+  const remove = Array.from(nodes);
+  for (let i = 0; i < remove.length; i++) {
+    const n : any = remove[i];
+    console.warn(n);
+    n.parentElement.removeChild(n);
+  }
 };
 
 export default {
